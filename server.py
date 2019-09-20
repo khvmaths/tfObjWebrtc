@@ -2,11 +2,18 @@ import object_detection_api
 import os
 from PIL import Image
 from flask import Flask, request, Response
+from werkzeug.contrib.fixers import ProxyFix
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app)
+api = Api(app,
+          version='0.1',
+          title='Our sample API',
+          description='This is our sample API'
+)
 
 # for CORS
-@app.after_request
+@api.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
@@ -14,22 +21,22 @@ def after_request(response):
     return response
 
 
-@app.route('/')
+@api.route('/')
 def index():
     return Response('Tensor Flow object detection')
 
 
-@app.route('/local')
+@api.route('/local')
 def local():
     return Response(open('./static/local.html').read(), mimetype="text/html")
 
 
-@app.route('/video')
+@api.route('/video')
 def remote():
     return Response(open('./static/video.html').read(), mimetype="text/html")
 
 
-@app.route('/test')
+@api.route('/test')
 def test():
     PATH_TO_TEST_IMAGES_DIR = 'object_detection/test_images'  # cwh
     TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 3)]
@@ -40,7 +47,7 @@ def test():
     return objects
 
 
-@app.route('/image', methods=['POST'])
+@api.route('/image', methods=['POST'])
 def image():
     try:
         image_file = request.files['image']  # get the image
